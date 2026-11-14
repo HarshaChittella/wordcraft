@@ -22,6 +22,15 @@ pub(crate) struct Parked {
 }
 
 impl WordApp {
+    /// Show every document in the one window, as the web app does, instead of a native window
+    /// per document: New and Open switch the window to the new document, and making a document
+    /// active (`session.activate`) shows it on the next frame. For a host that embeds WordCraft
+    /// in a window of its own and switches documents with its own tabs. Call before the first
+    /// frame.
+    pub fn use_one_window(&mut self) {
+        self.windows.single();
+    }
+
     /// Replace the document the window opened with before anything else happens (the first blank
     /// document, made again on the region File › Options chose): the session's document is
     /// swapped and the window follows it at once. Replacing it with `session.set_document`
@@ -391,6 +400,24 @@ mod tests {
             a.handle_request(&req);
         }
         assert!(!a.ui.backstage, "Print for the other document left the window alone");
+    }
+
+    /// A host that embeds WordCraft keeps one window: New opens no second one, and activating
+    /// another document shows it in the same window.
+    #[test]
+    fn one_window_shows_each_document_it_is_asked_to() {
+        let mut a = app();
+        a.use_one_window();
+        let first = a.session.document_id();
+        a.run("file.new", json!({})).unwrap();
+        let second = a.session.document_id();
+        assert_ne!(first, second);
+        assert_eq!(a.window_count(), 1, "New opened no window of its own");
+        assert_eq!(a.shown_document, second, "the window shows the new document");
+        a.session.activate(first).unwrap();
+        a.sync_document();
+        assert_eq!(a.window_count(), 1);
+        assert_eq!(a.shown_document, first, "the window follows the active document");
     }
 
     #[test]

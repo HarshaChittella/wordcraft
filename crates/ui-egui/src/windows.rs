@@ -127,8 +127,7 @@ impl Windows {
         self.native
     }
 
-    /// One window for every document, as in the web app.
-    #[cfg(test)]
+    /// One window for every document, as in the web app ([`WordApp::use_one_window`]).
     pub(crate) fn single(&mut self) {
         self.native = false;
     }
